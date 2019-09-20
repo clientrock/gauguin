@@ -59,6 +59,10 @@ module Gauguin
     def to_s
       "rgb(#{self.red}, #{self.green}, #{self.blue})"
     end
+    
+    def to_hex
+      "##{hex(self.red)}#{hex(self.green)}#{hex(self.blue)}"
+    end
 
     def inspect
       msg = "#{to_s}[#{percentage}]"
@@ -70,6 +74,12 @@ module Gauguin
 
     def transparent?
       self.transparent
+    end
+    
+    private
+    
+    def hex(int)
+      int.to_s(16).upcase.rjust(2, '0')
     end
   end
 end
