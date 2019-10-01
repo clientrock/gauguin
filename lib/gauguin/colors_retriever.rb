@@ -5,29 +5,25 @@ module Gauguin
     end
 
     def colors
-      colors = {}
+      colors = Hash.new(0)
 
       histogram = @image.color_histogram
-      image_size = @image.columns * @image.rows
 
-      histogram.each do |pixel, count|
-        image_pixel = @image.pixel(pixel)
+      non_transparent = histogram.reject { |_, rgba| rgba[3].zero? }
+      non_transparent_count = non_transparent.reduce(0) { |s, p| s + p[0] }
 
-        red, green, blue = image_pixel.to_rgb
-        percentage = count.to_f / image_size
-        color = Gauguin::Color.new(red, green, blue, percentage,
-                                   image_pixel.transparent?)
+      non_transparent.each do |count, rgba|
+        red, green, blue = rgba
+        percentage = count.to_f / non_transparent_count
+
+        color = Gauguin::Color.new(red, green, blue)
 
         # histogram can contain different magic pixels for
         # the same colors with different opacity
-        if colors[color]
-          colors[color].percentage += color.percentage
-        else
-          colors[color] = color
-        end
+        colors[color] += percentage
       end
 
-      colors.values
+      colors
     end
   end
 end

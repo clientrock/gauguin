@@ -1,54 +1,68 @@
-require 'rmagick'
-require 'forwardable'
+require "open3"
 
 module Gauguin
   class Image
-    extend Forwardable
-    attr_accessor :image
-    delegate [:color_histogram, :columns, :rows, :write] => :image
+    attr_accessor :height, :width
+    RGBA_REGEX = /\((\S+),(\S+),(\S+),(\S+)\)/
 
     def initialize(path = nil)
       return unless path
-
-      list = Magick::ImageList.new(path)
-      self.image = list.first
+      self.path = path
+      identify!(path)
     end
 
-    def self.blank(columns, rows)
-      blank_image = Image.new
-      transparent_white = Magick::Pixel.new(255, 255, 255, Pixel::MAX_TRANSPARENCY)
-      blank_image.image = Magick::Image.new(columns, rows) do
-        self.background_color = transparent_white
+    def color_histogram(top_left_pixel: false)
+      trimmed_path = top_left_pixel ? "#{path}[1x1+0+0]" : path
+      posterize = if Gauguin.configuration.posterize_level
+        ["-posterize", "#{Gauguin.configuration.posterize_level}"]
+      else
+        []
       end
-      blank_image
+
+      output = run_in_shell(
+        "convert",
+        trimmed_path,
+        *posterize,
+        "-format", "%c",
+        "-alpha", "on",
+        "histogram:info:-"
+      )
+
+      output.lines.map do |line|
+        data = line.split(' ')
+        count = data.shift
+        data.pop(2)
+
+        rgb = data.join('').match(RGBA_REGEX)
+
+        [count.delete(':').to_i, rgb[1..rgb.size-1].map(&:to_i)]
+      end
     end
 
-    def pixel(magic_pixel)
-      Pixel.new(magic_pixel)
+    def background_color
+      color_histogram(top_left_pixel: true)[0][1]
     end
 
-    def pixel_color(row, column, *args)
-      magic_pixel = self.image.pixel_color(row, column, *args)
-      pixel(magic_pixel)
+    private
+
+    attr_accessor :path
+
+    def identify!(path)
+      output = run_in_shell(
+        "identify",
+        "-format", "%wx%h",
+        path
+      )
+
+      dimensions = output.split('x')
+      self.height, self.width = dimensions.map(&:to_i)
     end
 
-    class Pixel
-      MAX_CHANNEL_VALUE = 257
-      MAX_TRANSPARENCY = 65535
+    def run_in_shell(*args)
+      stdout, status = Open3.capture2(*args)
+      raise(Gauguin::Error, stdout) if status != 0
 
-      def initialize(magic_pixel)
-        @magic_pixel = magic_pixel
-      end
-
-      def transparent?
-        @magic_pixel.opacity >= MAX_TRANSPARENCY
-      end
-
-      def to_rgb
-        [:red, :green, :blue].map do |color|
-          @magic_pixel.send(color) / MAX_CHANNEL_VALUE
-        end
-      end
+      stdout
     end
   end
 end

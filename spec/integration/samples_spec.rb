@@ -6,7 +6,9 @@ module Gauguin
       File.join("spec", "support", "pictures", file_name)
     end
 
-    let(:painting) { Painting.new(picture_path(file_name)) }
+    let(:painting) {
+      Painting.new(picture_path(file_name))
+   }
 
     def self.paths
       (1..11).map { |i| picture_path(File.join("samples", "sample#{i}.png")) }
@@ -24,7 +26,7 @@ module Gauguin
         ["rgb(109, 207, 246)", "rgb(237, 28, 36)", "rgb(255, 255, 255)"],
         ["rgb(255, 255, 255)", "rgb(87, 196, 15)"],
         ["rgb(240, 110, 170)", "rgb(255, 255, 255)"],
-        ["rgb(0, 165, 19)", "rgb(0, 71, 241)", "rgb(230, 27, 49)", "rgb(249, 166, 0)", "rgb(255, 255, 255)"]
+        ["rgb(0, 71, 241)", "rgb(17, 119, 35)", "rgb(230, 27, 49)", "rgb(249, 166, 0)", "rgb(255, 255, 255)", "rgb(60, 125, 253)"]
       ]
     end
 
