@@ -1,10 +1,11 @@
 module Gauguin
   class Painting
-    attr_reader :color_count, :background_color, :colors_above_noise_level
+    # delegate :background_color, to: :image
+    attr_reader :color_count, :background_color, :colors_above_noise_level, :path
 
     def initialize(path)
-      @image ||= Gauguin::Image.new(path)
-      @colors_retriever = Gauguin::ColorsRetriever.new(@image)
+      @path = path
+      @colors_retriever = Gauguin::ColorsRetriever.new(image)
       @colors_limiter = Gauguin::ColorsLimiter.new
       @noise_reducer = Gauguin::NoiseReducer.new
       @colors_clusterer = Gauguin::ColorsClusterer.new
@@ -34,10 +35,14 @@ module Gauguin
       end
     end
 
+    def image
+      @image ||= Gauguin::Image.new(path)
+    end
+
     private
 
     def background_color_from_palette(dominant_colors)
-      red, green, blue, opacity = @image.background_color
+      red, green, blue, opacity = image.background_color
       return nil if opacity.zero?
 
       background_color = Gauguin::Color.new(red, green, blue, opacity.zero?)

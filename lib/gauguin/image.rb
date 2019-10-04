@@ -13,16 +13,20 @@ module Gauguin
 
     def color_histogram(top_left_pixel: false)
       trimmed_path = top_left_pixel ? "#{path}[1x1+0+0]" : path
-      posterize = if Gauguin.configuration.posterize_level
-        ["-posterize", "#{Gauguin.configuration.posterize_level}"]
+      if top_left_pixel
+        opts = ["-background", "white", "-flatten"]
       else
-        []
+        opts = if Gauguin.configuration.posterize_level
+          ["-posterize", "#{Gauguin.configuration.posterize_level}"]
+        else
+          []
+        end
       end
 
       output = run_in_shell(
         "convert",
         trimmed_path,
-        *posterize,
+        *opts,
         "-format", "%c",
         "-alpha", "on",
         "histogram:info:-"
@@ -40,7 +44,7 @@ module Gauguin
     end
 
     def background_color
-      color_histogram(top_left_pixel: true)[0][1]
+      @background_color ||= color_histogram(top_left_pixel: true)[0][1]
     end
 
     private
